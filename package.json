@@ -1,6 +1,6 @@
 {
   "name": "validize",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Tiny TypeScript library for validating JSON",
   "main": "validize.js",
   "scripts": {
