@@ -4,10 +4,10 @@
   "description": "Tiny TypeScript library for validating JSON",
   "main": "validize.js",
   "scripts": {
-    "build": "tsc -p .",
+    "build": "copy /y package.json dist && tsc -p .",
     "watch": "tsc -w -p .",
-    "test": "ts-jest",
-    "watch:test": "ts-jest --watch"
+    "test": "mocha --require ts-node/register test/*.test.ts",
+    "watch:test": "mocha --watch --require ts-node/register test/*.test.ts --watch --watch-extensions ts"
   },
   "author": "Jared Krinke",
   "license": "MIT",
@@ -15,6 +15,13 @@
     "validize.js",
     "validize.d.ts"
   ],
-  "devDependencies": {},
+  "devDependencies": {
+    "@types/assert": "^1.4.3",
+    "@types/mocha": "^5.2.7",
+    "assert": "^2.0.0",
+    "mocha": "^7.0.0",
+    "ts-node": "^8.5.4",
+    "typescript": "^3.7.4"
+  },
   "dependencies": {}
 }
