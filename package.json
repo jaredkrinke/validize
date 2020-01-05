@@ -1,0 +1,20 @@
+{
+  "name": "validize",
+  "version": "0.1.1",
+  "description": "Tiny TypeScript library for validating JSON",
+  "main": "validize.js",
+  "scripts": {
+    "build": "tsc -p .",
+    "watch": "tsc -w -p .",
+    "test": "ts-jest",
+    "watch:test": "ts-jest --watch"
+  },
+  "author": "Jared Krinke",
+  "license": "MIT",
+  "files": [
+    "validize.js",
+    "validize.d.ts"
+  ],
+  "devDependencies": {},
+  "dependencies": {}
+}
