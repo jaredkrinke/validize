@@ -70,5 +70,15 @@ describe("Validize", () => {
         assert.throws(() => { validate(true) });
     });
 
+    it("Object validation (empty)", () => {
+        const validate = Validize.createValidator<{}>({});
+        assert.deepEqual(validate({}), {});
+
+        assert.throws(() => { validate(undefined) });
+        assert.throws(() => { validate(1) });
+        assert.throws(() => { validate("") });
+        assert.throws(() => { validate(true) });
+    });
+
 });
 
