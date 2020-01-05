@@ -14,13 +14,13 @@ export function createStringValidator(pattern: RegExp): (x: unknown) => string {
     };
 }
 
-export function createNumberValidator(min: number, max: number): (x: unknown) => number {
+export function createFloatValidator(min: number, max: number, coerce?: boolean): (x: unknown) => number {
     return function (x) {
         let number = undefined;
         if (typeof(x) === "number") {
             number = x;
-        } else if (typeof(x) === "string") {
-            number = parseInt(x);
+        } else if ((coerce === true) && typeof(x) === "string") {
+            number = parseFloat(x);
         }
     
         if (number !== undefined && !isNaN(number) && number >= min && number <= max) {
@@ -29,6 +29,18 @@ export function createNumberValidator(min: number, max: number): (x: unknown) =>
             throw new ValidationError("Invalid number");
         }
     }
+}
+
+export function createIntegerValidator(min: number, max: number, coerce?: boolean): (x: unknown) => number {
+    const validateFloat = createFloatValidator(min, max, coerce);
+    return function (x) {
+        const float = validateFloat(x);
+        if (float === Math.floor(float)) {
+            return float;
+        } else {
+            throw new ValidationError("Invalid integer");
+        }
+    };
 }
 
 export type ValidatorMap<T> = {
