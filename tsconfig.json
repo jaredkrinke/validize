@@ -3,6 +3,7 @@
         "module": "commonjs",
         "target": "ES2017",
         "outDir": "./dist",
+        "esModuleInterop": true,
         "declaration": true
     },
     "files": [
