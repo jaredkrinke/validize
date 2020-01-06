@@ -53,12 +53,13 @@ router.post(
 * `Validize.createStringValidator(pattern: RegExp)`
 * `Validize.createFloatValidator(min: number, max: number, coerce?: boolean)`
 * `Validize.createIntegerValidator(min: number, max: number, coerce?: boolean)`
+* `Validize.createOptionalValidator<T>(validateExistingValue: (x: unknown) => T)`
 * `Validize.createValidator<T>(validator: ValidatorMap<T>)`
 
 Note: `createValidator<T>` takes an interface as a type argument and expects an object with all of the properties of that interface filled in using validators. Object validators can be nested.
 
 #### Middleware
-* `validate(validateInput: (context: Koa.Context) => void): Koa.Middleware`
+* `Validize.validate(validateInput: (context: Koa.Context) => void): Koa.Middleware`
 
 #### Need more?
 See the tests for more specific details/syntax.
