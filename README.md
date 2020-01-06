@@ -4,7 +4,7 @@
 
 ## Install
 ```
-yarn add https://github.com/jaredkrinke/modules.git#validize-1.0.0
+yarn add https://github.com/jaredkrinke/modules.git#validize-1.2.0
 ```
 
 ## Example
