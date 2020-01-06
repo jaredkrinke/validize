@@ -2,6 +2,7 @@ import * as Koa from "koa";
 
 // TODO: Optional fields
 // TODO: Arrays
+// TODO: Booleans
 
 const badRequest = 400;
 const trace = (process?.env?.VALIDIZE_TRACE === "1");
@@ -10,6 +11,16 @@ export class ValidationError extends Error {
     constructor(message: string) {
         super(message);
     }
+}
+
+export function createOptionalValidator<T>(validateExistingValue: (x: unknown) => T) {
+    return function (x: unknown) {
+        if (x === undefined) {
+            return undefined;
+        } else {
+            return validateExistingValue(x);
+        }
+    };
 }
 
 export function createStringValidator(pattern: RegExp): (x: unknown) => string {
@@ -59,26 +70,22 @@ export function createValidator<T>(validator: ValidatorMap<T>): (input: unknown)
     return function (input: unknown): T {
         if (typeof(input) === "object") {
             let result = {};
+            for (let key in validator) {
+                const fieldName = key as string;
+                const validatedValue = validator[fieldName](input[fieldName]);
+                if (validatedValue !== undefined) {
+                    result[fieldName] = validatedValue;
+                }
+            }
+    
             for (let key in input) {
                 if (typeof(key) !== "string") {
                     throw new ValidationError("Invalid field");
                 }
         
                 const fieldName = key as string;
-                const fieldValidator = validator[fieldName];
-                if (!fieldValidator) {
+                if (validator[fieldName] === undefined) {
                     throw new ValidationError("Extraneous field");
-                }
-        
-                result[fieldName] = fieldValidator(input[fieldName]);
-            }
-    
-            for (let key in validator) {
-                if (typeof(key) === "string") {
-                    const fieldName = key as string;
-                    if (input[fieldName] === undefined || input[fieldName] === null) {
-                        throw new ValidationError("Missing field");
-                    }
                 }
             }
     

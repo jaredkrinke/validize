@@ -118,6 +118,37 @@ describe("Validize", () => {
             assert.throws(() => { validate(true) });
         });
 
+        it("Optional", () => {
+            interface SomeInterface {
+                i: number;
+                f?: number;
+            }
+
+            const validate = Validize.createValidator<SomeInterface>({
+                i: Validize.createIntegerValidator(1, 3),
+                f: Validize.createOptionalValidator(Validize.createFloatValidator(0, 1)),
+            });
+
+            const valid1: SomeInterface = {
+                i: 2,
+            };
+
+            const valid2: SomeInterface = {
+                i: 2,
+                f: 0.7,
+            };
+
+            assert.deepEqual(validate(valid1), valid1);
+            assert.deepEqual(validate(valid2), valid2);
+
+            assert.throws(() => { validate({}) });
+            assert.throws(() => { validate({i: 2, f: 0.7, extra: "123"}) });
+            assert.throws(() => { validate("") });
+            assert.throws(() => { validate(1) });
+            assert.throws(() => { validate(undefined) });
+            assert.throws(() => { validate(true) });
+        });
+
         it("Nested", () => {
             interface Inner {
                 i: number;
