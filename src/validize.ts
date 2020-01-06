@@ -1,6 +1,5 @@
 import * as Koa from "koa";
 
-// TODO: Optional fields
 // TODO: Arrays
 // TODO: Booleans
 
