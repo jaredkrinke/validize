@@ -1,3 +1,8 @@
+import * as Koa from "koa";
+
+const badRequest = 400;
+const trace = (process?.env?.VALIDIZE_TRACE === "1");
+
 export class ValidationError extends Error {
     constructor(message: string) {
         super(message);
@@ -80,4 +85,22 @@ export function createValidator<T>(validator: ValidatorMap<T>): (input: unknown)
             throw new ValidationError("Not an object");
         }
     };
+}
+
+export function validate(validateInput: (context: Koa.Context) => void): Koa.Middleware {
+    return async function (context: Koa.Context, next: Koa.Next) {
+        try {
+            validateInput(context);
+        } catch (err) {
+            if (trace) {
+                console.error(err);
+            }
+
+            context.status = badRequest;
+            context.body = "";
+            return;
+        }
+    
+        return await next();
+    }
 }

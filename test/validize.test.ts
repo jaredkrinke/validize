@@ -1,6 +1,7 @@
 import "mocha";
 import assert from "assert";
 import * as Validize from "../src/validize";
+import * as Koa from "koa";
 
 describe("Validize", () => {
     describe("String validation", () => {
@@ -157,5 +158,53 @@ describe("Validize", () => {
         });
     });
 
+    describe("Middleware", () => {
+        interface SomeInterface {
+            i: number;
+            f: number;
+            s: string;
+        }
+
+        const validate = Validize.createValidator<SomeInterface>({
+            i: Validize.createIntegerValidator(1, 3),
+            f: Validize.createFloatValidator(0, 1),
+            s: Validize.createStringValidator(/^[0-9]*$/),
+        });
+
+        const middleware = Validize.validate((context) => {
+            context.validated = validate(JSON.parse(context.params.json));
+        })
+
+        it("Valid", async () => {
+            const valid: SomeInterface = {
+                i: 2,
+                f: 0.7,
+                s: "1234",
+            };
+
+            let context = { params: { json: JSON.stringify(valid), } } as unknown as Koa.Context;
+            let successful = false;
+            await middleware(context, async () => { successful = true; });
+    
+            assert.equal(successful, true);
+            assert.deepEqual(context.validated, valid)
+        });
+
+        it("Invalid", async () => {
+            const invalid: SomeInterface = {
+                i: 2,
+                f: 0.7,
+                s: "abc",
+            };
+    
+            let context = { params: { json: JSON.stringify(invalid), } } as unknown as Koa.Context;
+            let successful = false;
+            await middleware(context, async () => { successful = true; });
+    
+            assert.equal(successful, false);
+            assert.equal(context.validated, undefined);
+            assert.equal(context.status, 400);
+        });
+    });
 });
 

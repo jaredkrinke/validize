@@ -22,16 +22,9 @@ Declare interfaces for your request and response formats, e.g.:
 interface TopScoresRequest {
     mode: number;
 }
-
-interface TopScore {
-    initials: string;
-    score: number;
-}
-
-type TopScoresResponse = TopScore[];
 ```
 
-Then write functions (that throw on error) to validate that the request's JSON is valid and matches your request interface:
+Then write functions (that throw on error) to validate that the request's JSON is valid and matches your interface (TypeScript will let you know if you miss any fields):
 
 ```typescript
 const validateTopScoresRequest = Validize.createValidator<TopScoresRequest>({
@@ -39,13 +32,24 @@ const validateTopScoresRequest = Validize.createValidator<TopScoresRequest>({
 });
 ```
 
-Usage could look like:
+This can all be leveraged in Koa middleware as follows (note: this example uses `@koa/router` and `koa-bodyparser`):
 
 ```typescript
-const parsedRequest = validateTopScoresRequest(JSON.parse(request.body));
+const validateSeed =  Validize.createStringValidator(/^[0-9a-f]{32}$/);
+
+router.post(
+    "/scores/:seed",
+    Validize.validate((context) => {
+        context.validated = validateTopScoresRequest(JSON.parse(context.request.rawBody));
+        context.validated.seed = validateSeed(context.params.seed);
+    }),
+    (context) => {
+        // Use context.validated to access the valid request object
+    })
 ```
 
 ### API
+#### Creating validators
 * `Validize.createStringValidator(pattern: RegExp)`
 * `Validize.createFloatValidator(min: number, max: number, coerce?: boolean)`
 * `Validize.createIntegerValidator(min: number, max: number, coerce?: boolean)`
@@ -53,4 +57,8 @@ const parsedRequest = validateTopScoresRequest(JSON.parse(request.body));
 
 Note: `createValidator<T>` takes an interface as a type argument and expects an object with all of the properties of that interface filled in using validators. Object validators can be nested.
 
+#### Middleware
+* `validate(validateInput: (context: Koa.Context) => void): Koa.Middleware`
+
+#### Need more?
 See the tests for more specific details/syntax.
