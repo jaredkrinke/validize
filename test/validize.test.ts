@@ -77,6 +77,34 @@ describe("Validize", () => {
         });
     });
 
+    describe("Boolean validation", () => {
+        it("Exact", () => {
+            const validate = Validize.createBooleanValidator();
+            assert.equal(validate(true), true);
+            assert.equal(validate(false), false);
+
+            assert.throws(() => { validate("true") });
+            assert.throws(() => { validate("false") });
+
+            assert.throws(() => { validate(undefined) });
+            assert.throws(() => { validate({}) });
+            assert.throws(() => { validate(1) });
+        });
+
+        it("Coerced", () => {
+            const validate = Validize.createBooleanValidator(true);
+            assert.equal(validate(true), true);
+            assert.equal(validate(false), false);
+
+            assert.equal(validate("true"), true);
+            assert.equal(validate("false"), false);
+
+            assert.throws(() => { validate(undefined) });
+            assert.throws(() => { validate({}) });
+            assert.throws(() => { validate(1) });
+        });
+    });
+
     describe("Object validation", () => {
         it("Empty", () => {
             const validate = Validize.createValidator<{}>({});

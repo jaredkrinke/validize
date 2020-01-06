@@ -1,7 +1,6 @@
 import * as Koa from "koa";
 
 // TODO: Arrays
-// TODO: Booleans
 
 const badRequest = 400;
 const trace = (process?.env?.VALIDIZE_TRACE === "1");
@@ -58,6 +57,22 @@ export function createIntegerValidator(min: number, max: number, coerce?: boolea
         } else {
             throw new ValidationError("Invalid integer");
         }
+    };
+}
+
+export function createBooleanValidator(coerce?: boolean): (x: unknown) => boolean {
+    return function (x) {
+        if (typeof(x) === "boolean") {
+            return x;
+        } else if (coerce === true && typeof(x) === "string") {
+            if (x === "true") {
+                return true;
+            } else if (x === "false") {
+                return false;
+            }
+        }
+
+        throw new ValidationError("Invalid Boolean");
     };
 }
 

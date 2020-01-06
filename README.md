@@ -53,6 +53,7 @@ router.post(
 * `Validize.createStringValidator(pattern: RegExp)`
 * `Validize.createFloatValidator(min: number, max: number, coerce?: boolean)`
 * `Validize.createIntegerValidator(min: number, max: number, coerce?: boolean)`
+* `Validize.createBooleanValidator(coerce?: boolean): (x: unknown) => boolean`
 * `Validize.createOptionalValidator<T>(validateExistingValue: (x: unknown) => T)`
 * `Validize.createValidator<T>(validator: ValidatorMap<T>)`
 
