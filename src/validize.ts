@@ -1,5 +1,8 @@
 import * as Koa from "koa";
 
+// TODO: Optional fields
+// TODO: Arrays
+
 const badRequest = 400;
 const trace = (process?.env?.VALIDIZE_TRACE === "1");
 
