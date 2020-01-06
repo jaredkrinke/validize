@@ -45,7 +45,7 @@ router.get("/queryonly", Validize.handle({
 }));
 
 // POST (route and body)
-interface PostParameters {
+interface PostRouteParameters {
     name: string;
 }
 
@@ -60,7 +60,7 @@ interface PostResponse {
     s?: string;
 }
 
-const validatePostParameters = Validize.createValidator<PostParameters>({
+const validatePostParameters = Validize.createValidator<PostRouteParameters>({
     name: Validize.createStringValidator(/^[a-z]+$/),
 })
 
