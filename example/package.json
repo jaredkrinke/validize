@@ -1,0 +1,18 @@
+{
+  "name": "validize-example",
+  "version": "0.0.1",
+  "description": "Example Koa server using Validize",
+  "main": "example.ts",
+  "scripts": {
+    "run": "ts-node example.ts"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@koa/router": "^8.0.5",
+    "koa": "^2.11.0",
+    "koa-bodyparser": "^4.2.1"
+  },
+  "devDependencies": {
+    "@types/koa-bodyparser": "^4.3.0"
+  }
+}

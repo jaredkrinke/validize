@@ -166,8 +166,14 @@ describe("Validize", () => {
                 f: 0.7,
             };
 
+            const valid3: SomeInterface = {
+                i: 2,
+                f: null,
+            };
+
             assert.deepEqual(validate(valid1), valid1);
             assert.deepEqual(validate(valid2), valid2);
+            assert.deepEqual(validate({ i: 2, f: null }), { i: 2 }); // Note: null changes to undefined
 
             assert.throws(() => { validate({}) });
             assert.throws(() => { validate({i: 2, f: 0.7, extra: "123"}) });
@@ -217,52 +223,102 @@ describe("Validize", () => {
         });
     });
 
-    describe("Middleware", () => {
-        interface SomeInterface {
-            i: number;
-            f: number;
-            s: string;
-        }
-
-        const validate = Validize.createValidator<SomeInterface>({
-            i: Validize.createIntegerValidator(1, 3),
-            f: Validize.createFloatValidator(0, 1),
-            s: Validize.createStringValidator(/^[0-9]*$/),
-        });
-
-        const middleware = Validize.validate((context) => {
-            context.validated = validate(JSON.parse(context.params.json));
-        })
-
-        it("Valid", async () => {
-            const valid: SomeInterface = {
-                i: 2,
-                f: 0.7,
-                s: "1234",
-            };
-
-            let context = { params: { json: JSON.stringify(valid), } } as unknown as Koa.Context;
-            let successful = false;
-            await middleware(context, async () => { successful = true; });
+    describe("Handler", () => {
+        describe("POST (route and body)", () => {
+            interface PostParameters {
+                name: string;
+            }
     
-            assert.equal(successful, true);
-            assert.deepEqual(context.validated, valid)
-        });
+            interface PostBody {
+                i: number;
+                s?: string;
+            }
+    
+            interface PostResponse {
+                name: string;
+                i: number;
+                s?: string;
+            }
+    
+            const validatePostParameters = Validize.createValidator<PostParameters>({
+                name: Validize.createStringValidator(/^[a-z]+$/),
+            })
+    
+            const validatePostBody = Validize.createValidator<PostBody>({
+                i: Validize.createIntegerValidator(1, 3),
+                s: Validize.createOptionalValidator(Validize.createStringValidator(/^[a-f]+$/)),
+            })
+    
+            let ranProcess = false;
+            let processedParameters: any;
+            let processedBody: any;            
+            const middleware = Validize.handle({
+                validateParameters: validatePostParameters,
+                validateBody: validatePostBody,
+                process: async (request) => {
+                    ranProcess = true;
+                    processedParameters = request.parameters;
+                    processedBody = request.body;
+                    const response: PostResponse = {
+                        name: request.parameters.name,
+                        i: request.body.i,
+                        s: request.body.s,
+                    };
+                    return response;
+                }
+            });
 
-        it("Invalid", async () => {
-            const invalid: SomeInterface = {
-                i: 2,
-                f: 0.7,
-                s: "abc",
-            };
-    
-            let context = { params: { json: JSON.stringify(invalid), } } as unknown as Koa.Context;
-            let successful = false;
-            await middleware(context, async () => { successful = true; });
-    
-            assert.equal(successful, false);
-            assert.equal(context.validated, undefined);
-            assert.equal(context.status, 400);
+            it("Valid", async () => {
+                let context = {
+                    params: { name: "abc" },
+                    query: {},
+                    request: {
+                        body: {
+                            i: 2,
+                        },
+                    },
+                };
+
+                ranProcess = false;
+                processedParameters = undefined;
+                processedBody = undefined;
+                await middleware(context as unknown as Koa.Context, async () => {});
+        
+                assert.equal(ranProcess, true);
+                assert.deepEqual(processedParameters, context.params);
+                assert.deepEqual(processedBody, context.request.body);
+            });
+
+            it("Invalid (empty)", async () => {
+                let context = {
+                    params: { name: "abc" },
+                    query: {},
+                    request: {
+                        body: {
+                        },
+                    },
+                };
+
+                ranProcess = false;
+                await middleware(context as unknown as Koa.Context, async () => {});       
+                assert.equal(ranProcess, false);
+            });
+
+            it("Invalid integer", async () => {
+                let context = {
+                    params: { name: "abc" },
+                    query: {},
+                    request: {
+                        body: {
+                            i: 5,
+                        },
+                    },
+                };
+
+                ranProcess = false;
+                await middleware(context as unknown as Koa.Context, async () => {});       
+                assert.equal(ranProcess, false);
+            });
         });
     });
 });

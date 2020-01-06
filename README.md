@@ -60,7 +60,63 @@ router.post(
 Note: `createValidator<T>` takes an interface as a type argument and expects an object with all of the properties of that interface filled in using validators. Object validators can be nested.
 
 #### Middleware
-* `Validize.validate(validateInput: (context: Koa.Context) => void): Koa.Middleware`
+```typescript
+type HandlerOptions<TRouteParameters, TRequestQuery, TRequestBody, TResponseBody> = {
+    validateParameters?: (parameters: any) => TRouteParameters,
+    validateQuery?: (query: any) => TRequestQuery,
+    validateBody?: (body: any) => TRequestBody,
+    process: (request: Request<TRouteParameters, TRequestQuery, TRequestBody>, context: Koa.Context) => Promise<TResponseBody | undefined>
+};
+
+export function handle<TRouteParameters, TRequestQuery, TRequestBody, TResponseBody>(
+    options: HandlerOptions<TRouteParameters, TRequestQuery, TRequestBody, TResponseBody>
+): Koa.Middleware {
+```
+
+1. Define an interface for route parameters, query parameters, the request body, and the response body
+2. Implement validators for all of the request interfaces
+3. Use `Validize.handle` to create middleware for validating the inputs and processing the validated input
+
+Example (see `example/example.ts` for the complete code):
+```typescript
+// POST (route and body)
+interface PostParameters {
+    name: string;
+}
+
+interface PostBody {
+    i: number;
+    s?: string;
+}
+
+interface PostResponse {
+    name: string;
+    i: number;
+    s?: string;
+}
+
+const validatePostParameters = Validize.createValidator<PostParameters>({
+    name: Validize.createStringValidator(/^[a-z]+$/),
+})
+
+const validatePostBody = Validize.createValidator<PostBody>({
+    i: Validize.createIntegerValidator(1, 3),
+    s: Validize.createOptionalValidator(Validize.createStringValidator(/^[a-f]+$/)),
+})
+
+router.post("/post/:name", Validize.handle({
+    validateParameters: validatePostParameters,
+    validateBody: validatePostBody,
+    process: async (request) => {
+        const response: PostResponse = {
+            name: request.parameters.name,
+            i: request.body.i,
+            s: request.body.s,
+        };
+        return response;
+    }
+}));
+```
 
 #### Need more?
-See the tests for more specific details/syntax.
+See the example and tests for more specific details/syntax.

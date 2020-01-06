@@ -2,7 +2,10 @@ import * as Koa from "koa";
 
 // TODO: Arrays
 
+const ok = 200;
 const badRequest = 400;
+const notFound = 404;
+const internalServerError = 500;
 const trace = (process?.env?.VALIDIZE_TRACE === "1");
 
 export class ValidationError extends Error {
@@ -11,11 +14,17 @@ export class ValidationError extends Error {
     }
 }
 
-export function createOptionalValidator<T>(validateExistingValue: (x: unknown) => T) {
+export class NotFoundError extends Error {
+    constructor (message:string) {
+        super(message);
+    }
+}
+
+export function createOptionalValidator<T>(validateExistingValue?: (x: unknown) => T) {
     return function (x: unknown) {
-        if (x === undefined) {
+        if (x === undefined || x === null) {
             return undefined;
-        } else {
+        } else if (validateExistingValue !== undefined) {
             return validateExistingValue(x);
         }
     };
@@ -111,20 +120,70 @@ export function createValidator<T>(validator: ValidatorMap<T>): (input: unknown)
     };
 }
 
-export function validate(validateInput: (context: Koa.Context) => void): Koa.Middleware {
-    return async function (context: Koa.Context, next: Koa.Next) {
+type Request<TRouteParameters, TRequestQuery, TRequestBody> = {
+    parameters: TRouteParameters;
+    query: TRequestQuery;
+    body: TRequestBody;
+};
+
+type HandlerOptions<TRouteParameters, TRequestQuery, TRequestBody, TResponseBody> = {
+    validateParameters?: (parameters: any) => TRouteParameters,
+    validateQuery?: (query: any) => TRequestQuery,
+    validateBody?: (body: any) => TRequestBody,
+    process: (request: Request<TRouteParameters, TRequestQuery, TRequestBody>, context: Koa.Context) => Promise<TResponseBody | undefined>
+};
+
+const validateEmpty = createValidator<{}>({});
+
+export function handle<TRouteParameters, TRequestQuery, TRequestBody, TResponseBody>(
+    options: HandlerOptions<TRouteParameters, TRequestQuery, TRequestBody, TResponseBody>
+): Koa.Middleware {
+    // Note: Assuming no next middleware
+    const validateRouteParameters = options.validateParameters || validateEmpty;
+    const validateRequestQuery = options.validateQuery || validateEmpty;
+    const validateRequestBody = options.validateBody || validateEmpty;
+
+    return async function (context: Koa.Context) {
+        // Validate input
         try {
-            validateInput(context);
-        } catch (err) {
+            const validatedInput: Request<TRouteParameters, TRequestQuery, TRequestBody> = {
+                parameters: validateRouteParameters(context.params) as TRouteParameters,
+                query: validateRequestQuery(context.query) as TRequestQuery,
+                body: validateRequestBody(((context?.request as any)?.body) || {}) as TRequestBody
+            };
+
+            // Process the validated input
+            try {
+                const response = await options.process(validatedInput, context);
+                if (response === undefined) {
+                    context.body = "";
+                } else {
+                    context.body = JSON.stringify(response);
+                }
+
+                context.status = ok;
+            } catch (e) {
+                // Report errors
+                context.body = "";
+                if (e instanceof NotFoundError) {
+                    context.status = notFound;
+                } else if (e instanceof ValidationError) {
+                    context.status = badRequest;
+                } else {
+                    context.status = internalServerError;
+                }
+
+                if (trace) {
+                    console.error(`Failed (${context.stats}): ${e.message}`);
+                }
+            }
+        } catch (e) {
             if (trace) {
-                console.error(err);
+                console.error(`Validation failed: ${e.message}`);
             }
 
             context.status = badRequest;
             context.body = "";
-            return;
         }
-    
-        return await next();
-    }
+    };
 }
