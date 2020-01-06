@@ -1,6 +1,6 @@
 # Validize
 
-**Validize** is a tiny TypeScript library for validating incoming JSON.
+**Validize** is a tiny TypeScript middleware for validating JSON in Koa.
 
 ## Install
 ```
