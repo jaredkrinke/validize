@@ -228,30 +228,30 @@ describe("Validize", () => {
             interface PostParameters {
                 name: string;
             }
-    
+
             interface PostBody {
                 i: number;
                 s?: string;
             }
-    
+
             interface PostResponse {
                 name: string;
                 i: number;
                 s?: string;
             }
-    
+
             const validatePostParameters = Validize.createValidator<PostParameters>({
                 name: Validize.createStringValidator(/^[a-z]+$/),
             })
-    
+
             const validatePostBody = Validize.createValidator<PostBody>({
                 i: Validize.createIntegerValidator(1, 3),
                 s: Validize.createOptionalValidator(Validize.createStringValidator(/^[a-f]+$/)),
             })
-    
+
             let ranProcess = false;
             let processedParameters: any;
-            let processedBody: any;            
+            let processedBody: any;
             const middleware = Validize.handle({
                 validateParameters: validatePostParameters,
                 validateBody: validatePostBody,
@@ -283,7 +283,7 @@ describe("Validize", () => {
                 processedParameters = undefined;
                 processedBody = undefined;
                 await middleware(context as unknown as Koa.Context, async () => {});
-        
+
                 assert.equal(ranProcess, true);
                 assert.deepEqual(processedParameters, context.params);
                 assert.deepEqual(processedBody, context.request.body);
@@ -300,7 +300,7 @@ describe("Validize", () => {
                 };
 
                 ranProcess = false;
-                await middleware(context as unknown as Koa.Context, async () => {});       
+                await middleware(context as unknown as Koa.Context, async () => {});
                 assert.equal(ranProcess, false);
             });
 
@@ -316,8 +316,85 @@ describe("Validize", () => {
                 };
 
                 ranProcess = false;
-                await middleware(context as unknown as Koa.Context, async () => {});       
+                await middleware(context as unknown as Koa.Context, async () => {});
                 assert.equal(ranProcess, false);
+            });
+        });
+
+        describe("GET", () => {
+            interface PostParameters {
+                name: string;
+            }
+
+            const validatePostParameters = Validize.createValidator<PostParameters>({
+                name: Validize.createStringValidator(/^[a-z]+$/),
+            })
+
+            let ranErrorHandler = false;
+            const middleware = Validize.handle({
+                validateParameters: validatePostParameters,
+                process: async (request) => {
+                    ranErrorHandler = false;
+                    switch (request.parameters.name) {
+                        case "ok": return;
+                        case "invalid": throw new Validize.ValidationError("Not valid");
+                        case "error": throw new Error("Error");
+                        default: throw new Validize.NotFoundError("Not found");
+                    }
+                }
+            });
+
+            it("Valid", async () => {
+                let context: any = {
+                    params: { name: "ok" },
+                    query: {},
+                    request: {},
+                };
+
+                await middleware(context as unknown as Koa.Context, async () => {});
+
+                assert.strictEqual(context.status, 200);
+                assert.strictEqual(context.body, "");
+                assert.strictEqual(ranErrorHandler, false);
+            });
+
+            it("Invalid", async () => {
+                let context: any = {
+                    params: { name: "invalid" },
+                    query: {},
+                    request: {},
+                };
+
+                await middleware(context as unknown as Koa.Context, async () => {});
+
+                assert.strictEqual(context.status, 400);
+                assert.strictEqual(ranErrorHandler, false);
+            });
+
+            it("Not found", async () => {
+                let context: any = {
+                    params: { name: "notfound" },
+                    query: {},
+                    request: {},
+                };
+
+                await middleware(context as unknown as Koa.Context, async () => {});
+
+                assert.strictEqual(context.status, 404);
+                assert.strictEqual(ranErrorHandler, false);
+            });
+
+            it("Server error", async () => {
+                let context: any = {
+                    params: { name: "error" },
+                    query: {},
+                    request: {},
+                };
+
+                await middleware(context as unknown as Koa.Context, async () => {});
+
+                assert.strictEqual(context.status, 500);
+                assert.strictEqual(ranErrorHandler, false);
             });
         });
     });
